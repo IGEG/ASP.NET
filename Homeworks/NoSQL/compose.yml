@@ -52,6 +52,18 @@ services:
       - 5435:5432
     environment: 
       - POSTGRES_PASSWORD=docker
+  
+  #GivingToCustomer Db mongo
+  mongodb:
+    image: "mongo:4.2.3"
+    container_name: mongodb
+    restart: always 
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+
   #GivingToCustomer Api
   promocode-factory-giving-to-customer-api:
     build: src/Pcf.GivingToCustomer/

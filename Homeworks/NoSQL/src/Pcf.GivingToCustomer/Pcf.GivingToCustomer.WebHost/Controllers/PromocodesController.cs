@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Pcf.GivingToCustomer.Core.Abstractions.Repositories;
-using Pcf.GivingToCustomer.Core.Domain;
+using Pcf.GivingToCustomer.Core.Domain.Mongo;
 using Pcf.GivingToCustomer.WebHost.Mappers;
 using Pcf.GivingToCustomer.WebHost.Models;
 
@@ -70,9 +70,9 @@ namespace Pcf.GivingToCustomer.WebHost.Controllers
             //  Получаем клиентов с этим предпочтением:
             var customers = await _customersRepository
                 .GetWhere(d => d.Preferences.Any(x =>
-                    x.Preference.Id == preference.Id));
+                    x.PreferenceId == preference.Id));
 
-            PromoCode promoCode = PromoCodeMapper.MapFromModel(request, preference, customers);
+            PromoCode promoCode = PromoCodeMapper.MapFromMongoModel(request, preference, customers);
 
             await _promoCodesRepository.AddAsync(promoCode);
 

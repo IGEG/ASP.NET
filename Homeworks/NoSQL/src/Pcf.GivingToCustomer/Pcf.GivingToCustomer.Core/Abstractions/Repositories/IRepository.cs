@@ -7,8 +7,7 @@ using Pcf.GivingToCustomer.Core.Domain;
 
 namespace Pcf.GivingToCustomer.Core.Abstractions.Repositories
 {
-    public interface IRepository<T>
-        where T: BaseEntity
+    public interface IRepository<T> where T :class
     {
         Task<IEnumerable<T>> GetAllAsync();
         
