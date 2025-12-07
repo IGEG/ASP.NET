@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -6,9 +6,11 @@
 
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
+      <PackageReerence Include="MassTransit.RabbitMQ" Version="8.2.3" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\RAbbitModels\RAbbitModels.csproj" />
       <ProjectReference Include="..\Pcf.Administration.Core\Pcf.Administration.Core.csproj" />
     </ItemGroup>
 
