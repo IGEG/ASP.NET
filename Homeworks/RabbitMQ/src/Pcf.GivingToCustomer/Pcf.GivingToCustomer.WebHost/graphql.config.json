@@ -1,0 +1,14 @@
+{
+  "schema": "**/*.graphqls",
+  "documents": "**/*.graphql",
+  "extensions": {
+    "endpoints": {
+      "default": {
+        "url": "https://localhost:5001/graphql",
+        "headers": {
+          "user-agent": "JS GraphQL"
+        }
+      }
+    }
+  }
+}

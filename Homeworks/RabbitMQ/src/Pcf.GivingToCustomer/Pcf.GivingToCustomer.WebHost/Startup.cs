@@ -1,17 +1,22 @@
-using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
-using Pcf.GivingToCustomer.Core.Abstractions.Repositories;
 using Pcf.GivingToCustomer.Core.Abstractions.Gateways;
-using Pcf.GivingToCustomer.DataAccess.Data;
+using Pcf.GivingToCustomer.Core.Abstractions.Repositories;
 using Pcf.GivingToCustomer.DataAccess;
+using Pcf.GivingToCustomer.DataAccess.Data;
 using Pcf.GivingToCustomer.DataAccess.Repositories;
 using Pcf.GivingToCustomer.Integration;
+using Pcf.GivingToCustomer.WebHost.GraphQL;
+using Pcf.GivingToCustomer.WebHost.GraphQL.InputTypes;
+using Pcf.GivingToCustomer.WebHost.GraphQL.Types;
+using Pcf.GivingToCustomer.WebHost.Services.Grpc;
+using System;
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace Pcf.GivingToCustomer.WebHost
 {
@@ -24,12 +29,23 @@ namespace Pcf.GivingToCustomer.WebHost
             Configuration = configuration;
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers().AddMvcOptions(x =>
-                x.SuppressAsyncSuffixInActionNames = false);
+            services.Configure<KestrelServerOptions>(options =>
+            {
+                // Порт для REST и GraphQL (HTTP/1.1)
+                options.ListenLocalhost(8093, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http1;
+                });
+
+                // Порт для gRPC (HTTP/2)
+                options.ListenLocalhost(5000, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+            });
+            services.AddControllers().AddMvcOptions(x => x.SuppressAsyncSuffixInActionNames = false);
             services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
             services.AddScoped<INotificationGateway, NotificationGateway>();
             services.AddScoped<IDbInitializer, EfDbInitializer>();
@@ -48,9 +64,27 @@ namespace Pcf.GivingToCustomer.WebHost
                 options.Title = "PromoCode Factory Giving To Customer API Doc";
                 options.Version = "1.0";
             });
+
+            // GRPC
+            services.AddGrpc();
+
+            // GraphQL
+            services
+                .AddGraphQLServer()
+                .AddQueryType(d => d.Name("Query"))
+                .AddTypeExtension<CustomerQuery>()
+                .AddMutationType(d => d.Name("Mutation"))
+                .AddTypeExtension<CustomerMutation>()
+                .AddType<CustomerType>()
+                .AddType<CreateCustomerInputType>()
+                .AddType<UpdateCustomerInputType>()
+                .AddType<DeleteCustomerInputType>()
+                .AddFiltering()
+                .AddSorting()
+                .AddProjections()
+                .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true);
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IDbInitializer dbInitializer)
         {
             if (env.IsDevelopment())
@@ -75,6 +109,12 @@ namespace Pcf.GivingToCustomer.WebHost
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+
+                // GRPC
+                endpoints.MapGrpcService<CustomerGrpcService>();
+
+                // GraphQL
+                endpoints.MapGraphQL();
             });
 
             dbInitializer.InitializeDb();
